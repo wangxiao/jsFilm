@@ -39,7 +39,7 @@ function main() {
 
 	var bgSprite = jf.Sprite( 'background' );
 
-	var stage = jf.Stage().width( bgSprite.width() ).height( bgSprite.height() );
+	var stage = jf.Stage().width( document.width ).height( bgSprite.height() );
 	var bgLayer = jf.Layer().width( bgSprite.width() ).height( bgSprite.height() );
 
 	bgLayer.add( bgSprite );
@@ -48,29 +48,30 @@ function main() {
 	var player = jf.Sprite( 'player1' ,{ width:68, height: 68, x:650, y:410 } );
 	bgLayer.add( player );
 
-	player.do(function() {
-		intervalChangeFace( this.container, ['player2','player3','player1'], 100);
-	});
+	// player.doThis(function() {
+	// 	intervalChangeFace( this.container, ['player2','player3','player1'], 100);
+	// });
 	
-	bgSprite.moveTo( -11100, 0, 3);
+	// bgSprite.moveTo( -11100, 0, 3);
 
 	// jf.speed(10);
 
+	jf.speed(1)
+		.timeline({
+			1000: function() {
+				console.log(jf.time());
+				player.doThis(function() {
+					intervalChangeFace( this.container, ['player2','player3','player1'], 100);
+				});
+			},
+			2000: function(){
+				console.log(jf.time());
+				// jf.pause();
+				bgSprite.moveTo( -11100, 0, 3);
+			}
+		});
+
 	jf.play();
-
-
-	//动画开始
-	// jf.speed(1)
-	// 	.timeline({
-	// 		1: function() {
-	// 			player.do(function() {
-	// 				intervalChangeFace( this.container, ['player2','player3','player1'], 100);
-	// 			});
-	// 		},
-	// 		2000: function(){
-	// 			bgSprite.moveTo( -11100, 0, 3);
-	// 		}
-	// 	});
 
 // main 函数结束的最后一个括号
 }
