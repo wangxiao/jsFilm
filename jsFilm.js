@@ -81,7 +81,13 @@ function jsFilm( options ) {
 	}
 
 	function changeStyle( element, name, value ) {
-		element.style[ name ] = value;
+		if( window.jQuery ) {
+			window.jQuery(element).css( name, value );
+		} else if( window.$ ) {
+			window.$(element).css( name, value );
+		} else {
+			element.style[ name ] = value;
+		}
 	}
 
 	function createCanvas( opts ) {
@@ -103,6 +109,7 @@ function jsFilm( options ) {
 	
 	function createDom( opts ) {
 		opts = {
+			id: opts.id,
 			width: opts.width || 0,
 			height: opts.height || 0,
 			x: opts.x || 0,
@@ -110,6 +117,9 @@ function jsFilm( options ) {
 			container: opts.container || null 
 		};
 		var element = document.createElement('div');
+		if( opts.id ) {
+			element.id = opts.id;
+		}
 		changeStyle( element, 'width', opts.width + 'px' );
 		changeStyle( element, 'height', opts.height + 'px' );
 		changeStyle( element, 'top', opts.y + 'px' );
@@ -214,7 +224,7 @@ function jsFilm( options ) {
 			// TODO: 绘制一切
 			// drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh)
 			for( var i = 0 , l = G_animationList.length ; i < l ; i += 1 ) {
-				if( !G_animationList[i].isPause ){
+				if( G_animationList[i] && !G_animationList[i].isPause ){
 					G_animationList[i].element[ G_animationList[i].fun ]();
 				}
 			}
@@ -392,12 +402,27 @@ function jsFilm( options ) {
 		var spriteList;
 
 		G_Sprite = function ( imgId, opts ) {
-			this.id = imgId;
+			
+			//TODO: 支持传入 dom
+			this.id = imgId || createId();
 			opts = opts || {};
+			if( typeof imgId === 'string' ) {
+				if(G_loadImagesList[imgId]) {
+					thisWidth = opts.width || G_loadImagesList[imgId].width;
+					thisHeight = opts.height || G_loadImagesList[imgId].height;
+				} else{
+					thisWidth = opts.width || G_options.width;
+					thisHeight = opts.height || G_options.height;
+				}
+			} else if( typeof imgId === 'object' ) {
+				thisWidth = imgId.width || G_options.width;
+				thisHeight = imgId.height || G_options.height;
+			} else {
+				thisWidth = G_options.width;
+				thisHeight = G_options.height;
+			}
 			thisX = opts.x || 0;
 			thisY = opts.y || 0;
-			thisWidth = opts.width || G_loadImagesList[imgId].width;
-			thisHeight = opts.height || G_loadImagesList[imgId].height;
 			thisZIndex = opts.zIndex || 0;
 			allDelayTime = 0;
 			spriteList = {};
@@ -409,6 +434,7 @@ function jsFilm( options ) {
 				break;
 				case 'dom':
 					this.container = createDom({
+						id: this.id,
 						width: thisWidth,
 						height: thisHeight,
 						x: thisX,
@@ -427,10 +453,11 @@ function jsFilm( options ) {
 						spriteList[ 'zIndex' + sprite.zIndex() ] = [];
 					}
 					if ( G_options.mode === 'dom' ) {
-						changeStyle( sprite.container, 'background', 'url(' + G_loadImagesList[ sprite.id ].src + ') no-repeat 0px 0px' );
+						if( G_loadImagesList[ sprite.id ] ) {
+							changeStyle( sprite.container, 'background', 'url(' + G_loadImagesList[ sprite.id ].src + ') no-repeat 0px 0px' );
+						}
 						changeStyle( sprite.container, 'position', 'absolute' );
 						changeStyle( sprite.container, 'overflow', 'hidden' );
-						changeStyle( sprite.container, '-webkit-transform', 'rotateZ(0deg)');
 						me.container.appendChild( sprite.container );
 					}
 					spriteList[ 'zIndex' + sprite.zIndex() ].push( sprite );
@@ -466,7 +493,7 @@ function jsFilm( options ) {
 				if( typeof width === 'undefined' ) {
 					return thisWidth;
 				}else{
-					setTimeout(function() {
+					var setWidth = function() {
 						thisWidth = width;
 						switch( G_options.mode ) {
 							case 'canvas':
@@ -475,7 +502,12 @@ function jsFilm( options ) {
 								changeStyle( me.container, 'width', width + 'px' );
 							break;
 						}
-					}, allDelayTime );
+					};
+					if( allDelayTime === 0) {
+						setWidth();
+					} else {
+						setTimeout( setWidth , allDelayTime );
+					}
 					return this;
 				}
 			},
@@ -484,7 +516,7 @@ function jsFilm( options ) {
 				if( typeof height === 'undefined' ) {
 					return thisHeight;
 				}else{
-					setTimeout(function() {
+					var setHight = function() {
 						thisHeight = height;
 						switch( G_options.mode ) {
 							case 'canvas':
@@ -493,7 +525,12 @@ function jsFilm( options ) {
 								changeStyle( me.container, 'height', height + 'px' );
 							break;
 						}
-					}, allDelayTime );
+					};
+					if( allDelayTime === 0) {
+						setHight();
+					} else {
+						setTimeout( setHight , allDelayTime );
+					}
 					return this;
 				}		
 			},
@@ -651,7 +688,7 @@ function jsFilm( options ) {
 				allDelayTime = 0;
 				return this;
 			},
-			do: function( fun ) {
+			doThis: function( fun ) {
 				if( fun ) {
 					var me = this;
 					setTimeout(function(){
